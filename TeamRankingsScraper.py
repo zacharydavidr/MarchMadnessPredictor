@@ -6,13 +6,22 @@ from bs4 import BeautifulSoup
 
 def main():
 
-    stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage", "three-point-pct", "opponent-shooting-pct",
-                   "offensive-efficiency", "defensive-efficiency"]
-    #selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16"]
-    #years =["2017","2016","2015","2014"]
+    years = ["2017", "2016", "2015", "2014", "2013", "2012"]
 
-    selection_show_dates = ["2018-2-19"]
-    years = ["2018"]
+    # read in file
+    for year in years:
+        summary_year_pt_in = open("summary" + str(year) + "_pt.csv", "r")
+        summary_year_pt_out = open("out_" + str(year) + ".csv", "w")
+
+        for line in summary_year_pt_in:
+            summary_year_pt_out.write(line)
+
+    exit(0)
+
+    # store line by team name
+    stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage", "three-point-pct", "opponent-shooting-pct"]
+    selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16","2013-03-17","2012-03-11"]
+
     index = 0
     for date in selection_show_dates:
         master_data_set = []
@@ -35,6 +44,7 @@ def main():
             out.write(row_string + "\n")
         index += 1
 
+
 def storeStatByDate(master_data_set, stat, date):
     print("-----------------------")
     # specify the url
@@ -52,7 +62,6 @@ def storeStatByDate(master_data_set, stat, date):
     for key in sorted(data_dictionary.items()):
         print(key[0]+":"+str(key[1]))
         stat_array.append(key[1])
-
 
     master_data_set.append(stat_array)
 
@@ -76,6 +85,7 @@ def storeTeamNamesByDate(master_data_set, date):
         stat_array.append(key[0])
 
     master_data_set.append(stat_array)
+
 
 if __name__ == "__main__":
     main()
