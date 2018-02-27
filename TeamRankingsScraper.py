@@ -9,21 +9,16 @@ def main():
     years = ["2017", "2016", "2015", "2014", "2013", "2012"]
 
     # read in file
+    index = 0
     for year in years:
         summary_year_pt_in = open("summary" + str(year) + "_pt.csv", "r")
         summary_year_pt_out = open("out_" + str(year) + ".csv", "w")
 
-        for line in summary_year_pt_in:
-            summary_year_pt_out.write(line)
+        date = get_selection_show_date_by_year(year)
 
-    exit(0)
+        stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage", "three-point-pct",
+                        "opponent-shooting-pct"]
 
-    # store line by team name
-    stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage", "three-point-pct", "opponent-shooting-pct"]
-    selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16","2013-03-17","2012-03-11"]
-
-    index = 0
-    for date in selection_show_dates:
         master_data_set = []
         storeTeamNamesByDate(master_data_set, date)
 
@@ -31,18 +26,24 @@ def main():
             storeStatByDate(master_data_set, stat, date)
 
         # open a csv file with append, so old data will not be erased
-        out = open("data_"+str(years[index])+".csv", "w")
-        row_string = ""
+        out = open("data_" + str(years[index]) + ".csv", "w")
+        row_string = "Team,"
         for idx in range(0, len(stat_percent)):
             row_string += str(stat_percent[idx]) + " , "
         out.write(row_string + "\n")
 
         for row in range(0, len(master_data_set[0])):
-            row_string = "Team,"
+            row_string = ""
             for col in range(0, len(master_data_set)):
                 row_string += str(master_data_set[col][row]) + " , "
             out.write(row_string + "\n")
         index += 1
+
+        for line in summary_year_pt_in:
+            summary_year_pt_out.write(line)
+    
+    exit()
+
 
 
 def storeStatByDate(master_data_set, stat, date):
@@ -86,6 +87,13 @@ def storeTeamNamesByDate(master_data_set, date):
 
     master_data_set.append(stat_array)
 
+
+def get_selection_show_date_by_year(year):
+    selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16","2013-03-17","2012-03-11"]
+    for date in selection_show_dates:
+        if year in date:
+            return date
+    exit("No selection show date found for " + str(year))
 
 if __name__ == "__main__":
     main()
