@@ -9,9 +9,14 @@ def main():
     team_name_dict = get_team_name_dict()
 
     years = ["2017", "2016", "2015", "2014", "2013", "2012"]
+    stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage",
+                    "three-point-pct", "opponent-shooting-pct"]
 
-    index = 0
+    predictors_headers = ""
+    classifier_headers = ""
+
     for year in years:
+        print("Processing year ... " + year)
         summary_year_pt_in = open("summary" + str(year) + "_pt.csv", "r").readlines()
         summary_year_pt_out = open("out_" + str(year) + ".csv", "w")
         kp_predictors_dict = {}
@@ -19,23 +24,22 @@ def main():
 
 
         # handle the headers for the kenpom pretourney data, split into predictors and classifiers
+        predictors_headers = ""
+        classifier_headers = ""
         headers = summary_year_pt_in[0]
         headers_array = headers.split(",")
-        predictors_headers = ""
         for i in range(0, 11):
             predictors_headers += headers_array[i] + ","
-        print(predictors_headers)
 
-        classifier_headers = ""
         for i in range(11, 18):
             classifier_headers += headers_array[i] + ","
-        print(classifier_headers)
 
         # skip the header line of the file for data processing
         for line in summary_year_pt_in[1:]:
 
             # replace kenpom team name with team rankings team name
             line_array = line.split(",")
+            process_name_exceptions(line_array)
             line_array[1] = team_name_dict[line_array[1]]
             team_name = line_array[1]
 
@@ -57,15 +61,9 @@ def main():
         # add a blank key for all teams in t
         tr_predictors_dict = {}
         for key in team_name_dict:
-            print(team_name_dict[key])
             tr_predictors_dict.update({team_name_dict[key]: " "})
-            if team_name_dict[key] == 'N Carolina':
-                print("NC!")
 
         date = get_selection_show_date_by_year(year)
-
-        stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage",
-                        "three-point-pct", "opponent-shooting-pct"]
 
         for stat in stat_percent:
             add_stat_by_date(tr_predictors_dict, stat, date)
@@ -74,15 +72,35 @@ def main():
         # write out the falue
         summary_year_pt_out.write(predictors_headers + classifier_headers + "\n")
         for key in team_name_dict:
+
+            # skip teams that weren't in D1
             team_name = team_name_dict[key]
-            temp_line = kp_predictors_dict[team_name] + tr_predictors_dict[team_name] + kp_classifier_dict[team_name] + "\n"
+            if(check_team_for_ineligiblity(team_name,year)):
+                continue
+
+            temp_line = kp_predictors_dict[team_name]
+            temp_line += tr_predictors_dict[team_name]
+            temp_line += kp_classifier_dict[team_name] + "\n"
             summary_year_pt_out.write(temp_line)
+
+    # combine all years into one file
+    master_out = open("master.csv", "w")
+    master_out.write(predictors_headers + classifier_headers + "\n")
+
+    for year in years:
+        temp_in = open("out_" + str(year) + ".csv", "r").readlines()
+
+        for line in temp_in[1:]:
+            master_out.write(line)
+
+
 
 
 
 
 def add_stat_by_date(tr_predictors_dict, stat, date):
     # specify the url and get the web page
+    print("Stat: " + str(stat))
     quote_page = "https://www.teamrankings.com/ncaa-basketball/stat/"+stat+"?date="+date
     page = urllib.request.urlopen(quote_page)
     soup = BeautifulSoup(page, "html.parser")
@@ -122,6 +140,33 @@ def get_team_name_dict():
         team_name_dict.update(temp_dict)
 
     return team_name_dict
+
+# Kenpom names change from year to year, so let's make sure they match our conversation table
+def process_name_exceptions(line_array):
+    if line_array[1] == "Arkansas Little Rock":
+        line_array[1] = "Little Rock"
+    elif line_array[1] == "IPFW":
+        line_array[1] = "Fort Wayne"
+    elif line_array[1] == "Texas Pan American":
+        line_array[1] = "UT Rio Grande Valley"
+
+
+def check_team_for_ineligiblity(team_name,year):
+    # ----------2013---------
+    if team_name == "Abl Christian" and int(year) <= 2013:
+        return True
+    elif team_name == "Grd Canyon" and int(year) <= 2013:
+        return True
+    elif team_name == "Incar Word" and int(year) <= 2013:
+        return True
+    elif team_name == "Mass Lowell" and int(year) <= 2013:
+        return True
+
+    # ---------2012---------
+    elif team_name == "New Orleans" and int(year) <= 2012:
+        return True
+    elif team_name == "N Kentucky" and int(year) <= 2012:
+        return True
 
 
 if __name__ == "__main__":
