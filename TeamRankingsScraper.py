@@ -8,9 +8,11 @@ def main():
 
     team_name_dict = get_team_name_dict()
 
-    years = ["2017", "2016", "2015", "2014", "2013", "2012"]
+    years = ["2017", "2016", "2015", "2014", "2013", "2012", "2011"]
     stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage",
-                    "three-point-pct", "opponent-shooting-pct"]
+                    "three-point-pct", "opponent-shooting-pct", "win-pct-close-games", "extra-chances-per-game",
+                    "opponent-effective-field-goal-pct", "points-from-3-pointers", "points-from-2-pointers",
+                    "win-pct-all-games", "free-throw-pct","free-throws-made-per-game"]
 
     predictors_headers = ""
     classifier_headers = ""
@@ -31,7 +33,7 @@ def main():
         for i in range(0, 11):
             predictors_headers += headers_array[i] + ","
 
-        for i in range(11, 18):
+        for i in range(11, 19):
             classifier_headers += headers_array[i] + ","
 
         # skip the header line of the file for data processing
@@ -54,7 +56,7 @@ def main():
             # split the predictors[15-18] from the class
 
             kp_classifier_line = ""
-            for i in range(11, 18):
+            for i in range(11, 19):
                 kp_classifier_line += line_array[i] + ","
             kp_classifier_dict.update({team_name: kp_classifier_line})
 
@@ -70,7 +72,7 @@ def main():
             predictors_headers += stat + ","
 
         # write out the falue
-        summary_year_pt_out.write(predictors_headers + classifier_headers + "\n")
+        summary_year_pt_out.write(predictors_headers + classifier_headers)
         for key in team_name_dict:
 
             # skip teams that weren't in D1
@@ -80,16 +82,19 @@ def main():
 
             temp_line = kp_predictors_dict[team_name]
             temp_line += tr_predictors_dict[team_name]
-            temp_line += kp_classifier_dict[team_name] + "\n"
+            temp_line += kp_classifier_dict[team_name]
             summary_year_pt_out.write(temp_line)
+
+        summary_year_pt_out.close()
+
 
     # combine all years into one file
     master_out = open("master.csv", "w")
-    master_out.write(predictors_headers + classifier_headers + "\n")
+    master_out.write(predictors_headers + classifier_headers )
 
     for year in years:
+        print("Writing Year: " + str(year))
         temp_in = open("out_" + str(year) + ".csv", "r").readlines()
-
         for line in temp_in[1:]:
             master_out.write(line)
 
@@ -106,9 +111,13 @@ def add_stat_by_date(tr_predictors_dict, stat, date):
     soup = BeautifulSoup(page, "html.parser")
 
     for tr in soup.find_all('tr')[1:]:
+        value = 0.0
         tds = tr.find_all('td')
         team = tds[1].text
-        value = float(tds[2].text.strip("%"))
+        if tds[2].text == "--":
+            value = float(0.0)
+        else:
+            value = float(tds[2].text.strip("%"))
 
         # update the value for the team
         team = team.strip()
@@ -119,7 +128,8 @@ def add_stat_by_date(tr_predictors_dict, stat, date):
 
 
 def get_selection_show_date_by_year(year):
-    selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16","2013-03-17","2012-03-11"]
+    selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16","2013-03-17","2012-03-11",
+                            "2011-03-13"]
     for date in selection_show_dates:
         if year in date:
             return date
@@ -166,6 +176,11 @@ def check_team_for_ineligiblity(team_name,year):
     elif team_name == "New Orleans" and int(year) <= 2012:
         return True
     elif team_name == "N Kentucky" and int(year) <= 2012:
+        return True
+
+    elif team_name == "Centenary" and int(year) > 2011:
+        return True
+    elif team_name == "Neb Omaha" and int(year) <= 2011:
         return True
 
 
