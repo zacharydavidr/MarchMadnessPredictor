@@ -6,10 +6,6 @@ from bs4 import BeautifulSoup
 
 def main():
 
-    BASE_URL = "https://www.teamrankings.com"
-    STAT_URL = BASE_URL + "/ncaa-basketball/stat/"
-    RPI_URL = BASE_URL + "/ncb/rpi/"
-
     team_name_dict = get_team_name_dict()
 
     stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage", "opponent-ftm-per-100-possessions",
@@ -72,16 +68,19 @@ def main():
             tr_predictors_dict.update({team_name_dict[key]: " "})
 
         date = get_selection_show_date_by_year(year)
+        BASE_URL = "https://www.teamrankings.com"
+        STAT_URL = BASE_URL + "/ncaa-basketball/stat/"
+        RPI_URL = BASE_URL + "/ncb/rpi/"
 
         for stat in stat_percent:
             print("Stat: " + str(stat))
-            STAT_URL += stat+"/?date="+date
-            add_stat_by_date(tr_predictors_dict, STAT_URL)
+            url = STAT_URL + stat+"/?date="+date
+            add_stat_by_date(tr_predictors_dict, url)
             predictors_headers += stat + ","
 
-        RPI_URL += "?date="+date
+        url = RPI_URL + "?date="+date
         print("RPI... ")
-        add_stat_by_date(tr_predictors_dict, RPI_URL)
+        add_stat_by_date(tr_predictors_dict, url)
         predictors_headers += "RPIRank" + ","
 
         # write out the falue
@@ -111,12 +110,15 @@ def main():
         print("Writing Year: " + str(year))
         temp_in = open("out_" + str(year) + ".csv", "r").readlines()
         for line in temp_in[1:]:
-            master_out.write(line.lstrip(",").rstrip(",") + "\n")
+            master_out.write(line.lstrip(",\n").rstrip(",\n") + "\n")
 
     # ---- process 2018 ------
+    print("--------")
+    print("Processing year ... 2018")
     tr_predictors_dict = {}
     kp_predictors_dict = {}
     BASE_URL = "https://www.teamrankings.com"
+    predictors_headers = ""
 
     for key in team_name_dict:
         tr_predictors_dict.update({team_name_dict[key]: " "})
