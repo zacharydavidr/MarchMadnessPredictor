@@ -6,9 +6,12 @@ from bs4 import BeautifulSoup
 
 def main():
 
+    BASE_URL = "https://www.teamrankings.com"
+    STAT_URL = BASE_URL + "/ncaa-basketball/stat/"
+    RPI_URL = BASE_URL + "/ncb/rpi/"
+
     team_name_dict = get_team_name_dict()
 
-    years = ["2017", "2016", "2015", "2014", "2013", "2012", "2011"]
     stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage",
                     "three-point-pct", "opponent-shooting-pct", "win-pct-close-games", "extra-chances-per-game",
                     "opponent-effective-field-goal-pct", "points-from-3-pointers", "points-from-2-pointers",
@@ -17,9 +20,12 @@ def main():
     predictors_headers = ""
     classifier_headers = ""
 
+    # ---- main processing loop ----
+    years = ["2017", "2016", "2015", "2014", "2013", "2012", "2011"]
+
     for year in years:
         print("Processing year ... " + year)
-        summary_year_pt_in = open("summary" + str(year) + "_pt.csv", "r").readlines()
+        kenpom_pre_tournament_data = open("summary" + str(year) + "_pt.csv", "r").readlines()
         summary_year_pt_out = open("out_" + str(year) + ".csv", "w")
         kp_predictors_dict = {}
         kp_classifier_dict = {}
@@ -28,7 +34,7 @@ def main():
         # handle the headers for the kenpom pretourney data, split into predictors and classifiers
         predictors_headers = ""
         classifier_headers = ""
-        headers = summary_year_pt_in[0]
+        headers = kenpom_pre_tournament_data[0]
         headers_array = headers.split(",")
         for i in range(0, 11):
             predictors_headers += headers_array[i] + ","
@@ -37,8 +43,8 @@ def main():
             classifier_headers += headers_array[i] + ","
 
         # skip the header line of the file for data processing
-        for line in summary_year_pt_in[1:]:
-
+        for line in kenpom_pre_tournament_data[1:]:
+            line = line.strip()
             # replace kenpom team name with team rankings team name
             line_array = line.split(",")
             process_name_exceptions(line_array)
@@ -68,11 +74,19 @@ def main():
         date = get_selection_show_date_by_year(year)
 
         for stat in stat_percent:
-            add_stat_by_date(tr_predictors_dict, stat, date)
+            print("Stat: " + str(stat))
+            STAT_URL += stat+"/?date="+date
+            add_stat_by_date(tr_predictors_dict, STAT_URL)
             predictors_headers += stat + ","
 
+        RPI_URL += "?date="+date
+        print("RPI... ")
+        add_stat_by_date(tr_predictors_dict, RPI_URL)
+        predictors_headers += "RPIRank" + ","
+
         # write out the falue
-        summary_year_pt_out.write(predictors_headers + classifier_headers)
+        new_line = predictors_headers + classifier_headers
+        summary_year_pt_out.write(new_line.lstrip(",\n").rstrip(",\n") + "\n")
         for key in team_name_dict:
 
             # skip teams that weren't in D1
@@ -83,48 +97,64 @@ def main():
             temp_line = kp_predictors_dict[team_name]
             temp_line += tr_predictors_dict[team_name]
             temp_line += kp_classifier_dict[team_name]
-            summary_year_pt_out.write(temp_line)
+            summary_year_pt_out.write(temp_line.lstrip(",\n").rstrip(",\n") + "\n")
 
         summary_year_pt_out.close()
 
 
     # combine all years into one file
     master_out = open("master.csv", "w")
-    master_out.write(predictors_headers + classifier_headers )
+    my_line = predictors_headers + classifier_headers
+    master_out.write(my_line.lstrip(",").rstrip(",") + "\n")
 
     for year in years:
         print("Writing Year: " + str(year))
         temp_in = open("out_" + str(year) + ".csv", "r").readlines()
         for line in temp_in[1:]:
-            master_out.write(line)
+            master_out.write(line.lstrip(",").rstrip(",") + "\n")
 
 
 
 
 
 
-def add_stat_by_date(tr_predictors_dict, stat, date):
+def add_stat_by_date(tr_predictors_dict, url):
     # specify the url and get the web page
-    print("Stat: " + str(stat))
-    quote_page = "https://www.teamrankings.com/ncaa-basketball/stat/"+stat+"?date="+date
-    page = urllib.request.urlopen(quote_page)
+    page = urllib.request.urlopen(url)
     soup = BeautifulSoup(page, "html.parser")
 
-    for tr in soup.find_all('tr')[1:]:
+    table = soup.find('table')
+
+    for tr in table.find_all('tr')[1:]:
         value = 0.0
         tds = tr.find_all('td')
         team = tds[1].text
+
         if tds[2].text == "--":
             value = float(0.0)
         else:
             value = float(tds[2].text.strip("%"))
 
+        if "rpi" in url:
+            value = int(tds[0].text.strip())
+
         # update the value for the team
         team = team.strip()
+        if "rpi" in url:
+            team = trim_record_from_team_name(team)
         prev_value = tr_predictors_dict[team]
         new_value = prev_value + str(value) + ","
 
         tr_predictors_dict.update({team: new_value})
+
+def trim_record_from_team_name(team):
+    reversed_name = team[::-1]
+    if reversed_name.find("(") != -1:
+        reversed_trimmed_name = reversed_name[reversed_name.find("(")+1:]
+        trimmed_name = reversed_trimmed_name[::-1]
+        return trimmed_name.strip()
+    else:
+        return team
 
 
 def get_selection_show_date_by_year(year):
