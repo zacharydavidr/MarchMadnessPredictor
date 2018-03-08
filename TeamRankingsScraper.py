@@ -113,10 +113,99 @@ def main():
         for line in temp_in[1:]:
             master_out.write(line.lstrip(",").rstrip(",") + "\n")
 
+    # ---- process 2018 ------
+    tr_predictors_dict = {}
+    kp_predictors_dict = {}
+    BASE_URL = "https://www.teamrankings.com"
+
+    for key in team_name_dict:
+        tr_predictors_dict.update({team_name_dict[key]: " "})
+
+    year = 2018
+    date = "2018-03-06"
+    summary_year_pt_out = open("out_2018.csv", "w")
+    kenpom_pre_tournament_data = open("summary" + str(year) + "_pt.csv", "r").readlines()
+    headers = kenpom_pre_tournament_data[0]
+    headers_array = headers.split(",")
+    for i in range(0, 10):
+        predictors_headers += headers_array[i].strip("\n") + ","
+
+    # skip the header line of the file for data processing
+    for line in kenpom_pre_tournament_data[1:]:
+        line = line.strip()
+        # replace kenpom team name with team rankings team name
+        line_array = line.split(",")
+        process_name_exceptions(line_array)
+        line_array[1] = team_name_dict[line_array[1]]
+        team_name = line_array[1]
+
+        # split the predictors[0-10] from the class
+        # Season,Team,AdjTempo,RankAdjTempo,AdjOE,RankAdjOE,AdjDE,RankAdjDE,AdjEM,RankAdjEM
+
+        kp_predictors_line = ""
+        for i in range(0, 10):
+            kp_predictors_line += line_array[i] + ","
+        kp_predictors_dict.update({team_name: kp_predictors_line})
+
+    print("Getting predicted seeds... ")
+    SEED_URL = BASE_URL + "/ncaa-tournament/bracketology/"
+    add_seed(tr_predictors_dict, SEED_URL)
+    predictors_headers += "seed" + ","
+
+
+    for stat in stat_percent:
+        print("Stat: " + str(stat))
+        STAT_URL = BASE_URL + "/ncaa-basketball/stat/"
+        STAT_URL += stat + "/?date=" + date
+        add_stat_by_date(tr_predictors_dict, STAT_URL)
+        predictors_headers += stat + ","
+
+    RPI_URL = BASE_URL + "/ncb/rpi/" "/?date=" + date
+    print("RPI... ")
+    add_stat_by_date(tr_predictors_dict, RPI_URL)
+    predictors_headers += "RPIRank" + ","
 
 
 
+    summary_year_pt_out.write(predictors_headers.lstrip(",\n").rstrip(",\n") + "\n")
+    for key in team_name_dict:
 
+        # skip teams that weren't in D1
+        team_name = team_name_dict[key]
+        if check_team_for_ineligiblity(team_name, year):
+            continue
+
+        temp_line = kp_predictors_dict[team_name]
+        temp_line += tr_predictors_dict[team_name]
+        summary_year_pt_out.write(temp_line.lstrip(",\n").rstrip(",\n") + "\n")
+
+    summary_year_pt_out.close()
+
+def add_seed(tr_predictors_dict, url):
+    # specify the url and get the web page
+    page = urllib.request.urlopen(url)
+    soup = BeautifulSoup(page, "html.parser")
+
+    table = soup.find('table')
+
+    for tr in table.find_all('tr')[2:]:
+        value = 0.0
+        tds = tr.find_all('td')
+        team = tds[2].text
+
+        if tds[0].text == "":
+            value = 0
+        else:
+            value = int(tds[0].text.strip(""))
+
+
+        # update the value for the team
+        team = team.strip()
+        team = trim_record_from_team_name(team)
+        prev_value = tr_predictors_dict[team]
+        new_value = prev_value + str(value) + ","
+
+        tr_predictors_dict.update({team: new_value})
 
 def add_stat_by_date(tr_predictors_dict, url):
     # specify the url and get the web page
