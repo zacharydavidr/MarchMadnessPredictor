@@ -12,16 +12,16 @@ def main():
 
     team_name_dict = get_team_name_dict()
 
-    stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage",
-                    "three-point-pct", "opponent-shooting-pct", "win-pct-close-games", "extra-chances-per-game",
+    stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage", "opponent-ftm-per-100-possessions",
+                    "three-point-pct", "opponent-shooting-pct", "win-pct-close-games",
                     "opponent-effective-field-goal-pct", "points-from-3-pointers", "points-from-2-pointers",
-                    "win-pct-all-games", "free-throw-pct","free-throws-made-per-game"]
+                    "win-pct-all-games", "free-throw-pct", "free-throws-made-per-game"]
 
     predictors_headers = ""
     classifier_headers = ""
 
     # ---- main processing loop ----
-    years = ["2017", "2016", "2015", "2014", "2013", "2012", "2011"]
+    years = ["2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010"]
 
     for year in years:
         print("Processing year ... " + year)
@@ -159,7 +159,7 @@ def trim_record_from_team_name(team):
 
 def get_selection_show_date_by_year(year):
     selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16","2013-03-17","2012-03-11",
-                            "2011-03-13"]
+                            "2011-03-13", "2010-03-14"]
     for date in selection_show_dates:
         if year in date:
             return date
@@ -208,9 +208,12 @@ def check_team_for_ineligiblity(team_name,year):
     elif team_name == "N Kentucky" and int(year) <= 2012:
         return True
 
+    elif team_name == "Neb Omaha" and int(year) <= 2011:
+        return True
     elif team_name == "Centenary" and int(year) > 2011:
         return True
-    elif team_name == "Neb Omaha" and int(year) <= 2011:
+
+    elif team_name == "Wins-Salem" and int(year) > 2010:
         return True
 
 
