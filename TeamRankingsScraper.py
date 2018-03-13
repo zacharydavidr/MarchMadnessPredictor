@@ -17,7 +17,7 @@ def main():
     classifier_headers = ""
 
     # ---- main processing loop ----
-    years = ["2017", "2016", "2015", "2014", "2013", "2012", "2011", "2010"]
+    years = ["2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017"]
 
     for year in years:
         print("Processing year ... " + year)
@@ -100,7 +100,6 @@ def main():
 
         summary_year_pt_out.close()
 
-
     # combine all years into one file
     master_out = open("master.csv", "w")
     my_line = predictors_headers + classifier_headers
@@ -124,12 +123,12 @@ def main():
         tr_predictors_dict.update({team_name_dict[key]: " "})
 
     year = 2018
-    date = "2018-03-06"
+    date = "2018-03-12"
     summary_year_pt_out = open("out_2018.csv", "w")
     kenpom_pre_tournament_data = open("summary" + str(year) + "_pt.csv", "r").readlines()
     headers = kenpom_pre_tournament_data[0]
     headers_array = headers.split(",")
-    for i in range(0, 10):
+    for i in range(0, 11):
         predictors_headers += headers_array[i].strip("\n") + ","
 
     # skip the header line of the file for data processing
@@ -142,17 +141,18 @@ def main():
         team_name = line_array[1]
 
         # split the predictors[0-10] from the class
-        # Season,Team,AdjTempo,RankAdjTempo,AdjOE,RankAdjOE,AdjDE,RankAdjDE,AdjEM,RankAdjEM
+        # Season,Team,AdjTempo,RankAdjTempo,AdjOE,RankAdjOE,AdjDE,RankAdjDE,AdjEM,RankAdjEM,seed
 
         kp_predictors_line = ""
-        for i in range(0, 10):
+        for i in range(0, 11):
             kp_predictors_line += line_array[i] + ","
         kp_predictors_dict.update({team_name: kp_predictors_line})
 
-    print("Getting predicted seeds... ")
-    SEED_URL = BASE_URL + "/ncaa-tournament/bracketology/"
-    add_seed(tr_predictors_dict, SEED_URL)
-    predictors_headers += "seed" + ","
+    # Seeds released, no longer need to get seed form team rankings
+    # print("Getting predicted seeds... ")
+    #//SEED_URL = BASE_URL + "/ncaa-tournament/bracketology/"
+    #add_seed(tr_predictors_dict, SEED_URL)
+    #predictors_headers += "seed" + ","
 
 
     for stat in stat_percent:
