@@ -5,19 +5,19 @@ from bs4 import BeautifulSoup
 
 
 def main():
-
     team_name_dict = get_team_name_dict()
 
     stat_percent = ["offensive-rebounding-pct", "total-rebounding-percentage", "opponent-ftm-per-100-possessions",
                     "three-point-pct", "opponent-shooting-pct", "win-pct-close-games",
                     "opponent-effective-field-goal-pct", "points-from-3-pointers", "points-from-2-pointers",
-                    "win-pct-all-games", "free-throw-pct", "free-throws-made-per-game"]
+                    "win-pct-all-games", "free-throw-pct", "free-throws-made-per-game", "assist--per--turnover-ratio",
+                    "personal-fouls-per-possession", "true-shooting-percentage"]
 
     predictors_headers = ""
     classifier_headers = ""
 
     # ---- main processing loop ----
-    years = ["2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017"]
+    years = ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017"]
 
     for year in years:
         print("Processing year ... " + year)
@@ -25,7 +25,6 @@ def main():
         summary_year_pt_out = open("out_" + str(year) + ".csv", "w")
         kp_predictors_dict = {}
         kp_classifier_dict = {}
-
 
         # handle the headers for the kenpom pretourney data, split into predictors and classifiers
         predictors_headers = ""
@@ -74,11 +73,11 @@ def main():
 
         for stat in stat_percent:
             print("Stat: " + str(stat))
-            url = STAT_URL + stat+"/?date="+date
+            url = STAT_URL + stat + "/?date=" + date
             add_stat_by_date(tr_predictors_dict, url)
             predictors_headers += stat + ","
 
-        url = RPI_URL + "?date="+date
+        url = RPI_URL + "?date=" + date
         print("RPI... ")
         add_stat_by_date(tr_predictors_dict, url)
         predictors_headers += "RPIRank" + ","
@@ -90,7 +89,7 @@ def main():
 
             # skip teams that weren't in D1
             team_name = team_name_dict[key]
-            if(check_team_for_ineligiblity(team_name,year)):
+            if (check_team_for_ineligibility(team_name, year)):
                 continue
 
             temp_line = kp_predictors_dict[team_name]
@@ -150,10 +149,9 @@ def main():
 
     # Seeds released, no longer need to get seed form team rankings
     # print("Getting predicted seeds... ")
-    #//SEED_URL = BASE_URL + "/ncaa-tournament/bracketology/"
-    #add_seed(tr_predictors_dict, SEED_URL)
-    #predictors_headers += "seed" + ","
-
+    # //SEED_URL = BASE_URL + "/ncaa-tournament/bracketology/"
+    # add_seed(tr_predictors_dict, SEED_URL)
+    # predictors_headers += "seed" + ","
 
     for stat in stat_percent:
         print("Stat: " + str(stat))
@@ -167,14 +165,12 @@ def main():
     add_stat_by_date(tr_predictors_dict, RPI_URL)
     predictors_headers += "RPIRank" + ","
 
-
-
     summary_year_pt_out.write(predictors_headers.lstrip(",\n").rstrip(",\n") + "\n")
     for key in team_name_dict:
 
         # skip teams that weren't in D1
         team_name = team_name_dict[key]
-        if check_team_for_ineligiblity(team_name, year):
+        if check_team_for_ineligibility(team_name, year):
             continue
 
         temp_line = kp_predictors_dict[team_name]
@@ -182,6 +178,7 @@ def main():
         summary_year_pt_out.write(temp_line.lstrip(",\n").rstrip(",\n") + "\n")
 
     summary_year_pt_out.close()
+
 
 def add_seed(tr_predictors_dict, url):
     # specify the url and get the web page
@@ -200,7 +197,6 @@ def add_seed(tr_predictors_dict, url):
         else:
             value = int(tds[0].text.strip(""))
 
-
         # update the value for the team
         team = team.strip()
         team = trim_record_from_team_name(team)
@@ -208,6 +204,7 @@ def add_seed(tr_predictors_dict, url):
         new_value = prev_value + str(value) + ","
 
         tr_predictors_dict.update({team: new_value})
+
 
 def add_stat_by_date(tr_predictors_dict, url):
     # specify the url and get the web page
@@ -238,10 +235,11 @@ def add_stat_by_date(tr_predictors_dict, url):
 
         tr_predictors_dict.update({team: new_value})
 
+
 def trim_record_from_team_name(team):
     reversed_name = team[::-1]
     if reversed_name.find("(") != -1:
-        reversed_trimmed_name = reversed_name[reversed_name.find("(")+1:]
+        reversed_trimmed_name = reversed_name[reversed_name.find("(") + 1:]
         trimmed_name = reversed_trimmed_name[::-1]
         return trimmed_name.strip()
     else:
@@ -249,8 +247,10 @@ def trim_record_from_team_name(team):
 
 
 def get_selection_show_date_by_year(year):
-    selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16","2013-03-17","2012-03-11",
-                            "2011-03-13", "2010-03-14"]
+    selection_show_dates = ["2017-03-12", "2016-03-13", "2015-03-15", "2014-03-16", "2013-03-17", "2012-03-11",
+                            "2011-03-13", "2010-03-14", "2009-03-15", "2008-03-16", "2007-03-11", "2006-03-12",
+                            "2005-03-13", "2004-03-14", "2003-03-16", "2002-03-10"]
+
     for date in selection_show_dates:
         if year in date:
             return date
@@ -272,6 +272,7 @@ def get_team_name_dict():
 
     return team_name_dict
 
+
 # Kenpom names change from year to year, so let's make sure they match our conversation table
 def process_name_exceptions(line_array):
     if line_array[1] == "Arkansas Little Rock":
@@ -280,31 +281,78 @@ def process_name_exceptions(line_array):
         line_array[1] = "Fort Wayne"
     elif line_array[1] == "Texas Pan American":
         line_array[1] = "UT Rio Grande Valley"
+    elif line_array[1] == "Utah Valley St.":
+        line_array[1] = "Utah Valley"
 
 
-def check_team_for_ineligiblity(team_name,year):
-    # ----------2013---------
-    if team_name == "Abl Christian" and int(year) <= 2013:
+
+# Teams come into and out of D1
+#  '>=' means they joined D1
+# '>' means they fell out of D1
+# Returns true if team was not a D1 school that year, returns false otherwise
+def check_team_for_ineligibility(team_name, year):
+    # -------- Changes for 13-14 season --------
+    if team_name == "Abl Christian" and int(year) < 2014:
         return True
-    elif team_name == "Grd Canyon" and int(year) <= 2013:
+    elif team_name == "Grd Canyon" and int(year) < 2014:
         return True
-    elif team_name == "Incar Word" and int(year) <= 2013:
+    elif team_name == "Incar Word" and int(year) < 2014:
         return True
-    elif team_name == "Mass Lowell" and int(year) <= 2013:
+    elif team_name == "Mass Lowell" and int(year) < 2014:
         return True
 
-    # ---------2012---------
-    elif team_name == "New Orleans" and int(year) <= 2012:
+    # -------- Changes for 12-13 season --------
+    elif team_name == "New Orleans" and int(year) < 2013:
         return True
-    elif team_name == "N Kentucky" and int(year) <= 2012:
-        return True
-
-    elif team_name == "Neb Omaha" and int(year) <= 2011:
-        return True
-    elif team_name == "Centenary" and int(year) > 2011:
+    elif team_name == "N Kentucky" and int(year) < 2013:
         return True
 
-    elif team_name == "Wins-Salem" and int(year) > 2010:
+    # -------- Changes for 11-12 season --------
+    elif team_name == "Neb Omaha" and int(year) < 2012:
+        return True
+    elif team_name == "Centenary" and int(year) >= 2012:
+        return True
+
+    # -------- Changes for 10-11 season --------
+    elif team_name == "Wins-Salem" and int(year) >= 2011:
+        return True
+
+    # -------- Changes for 09-10 season --------
+    elif team_name == "South Dakota" and int(year) < 2010:
+        return True
+    elif team_name == "North Dakota" and int(year) < 2010:
+        return True
+    elif team_name == "Seattle" and int(year) < 2010:
+        return True
+    elif team_name == "SIU Edward" and int(year) < 2010:
+        return True
+
+    # -------- Changes for 08-09 season --------
+    elif team_name == "Bryant" and int(year) < 2009:
+        return True
+    elif team_name == "Houston Bap" and int(year) < 2009:
+        return True
+
+    # -------- Changes for 07-08 season --------
+    elif team_name == "CS Bakersfld" and int(year) < 2008:
+        return True
+    elif team_name == "Fla Gulf Cst" and int(year) < 2008:
+        return True
+    elif team_name == "NC Central" and int(year) < 2008:
+        return True
+    elif team_name == "Presbyterian" and int(year) < 2008:
+        return True
+    elif team_name == "SC Upstate" and int(year) < 2008:
+        return True
+
+    # -------- Changes for 07-08 season --------
+    elif team_name == "Central Ark" and int(year) < 2007:
+        return True
+    elif team_name == "NJIT" and int(year) < 2007:
+        return True
+    elif team_name == "Wins-Salem" and int(year) < 2007:
+        return True
+    elif team_name == "Bham Southern" and int(year) >= 2007:
         return True
 
 
