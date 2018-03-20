@@ -1,6 +1,5 @@
 # import libraries
 import urllib.request
-import csv
 from bs4 import BeautifulSoup
 
 
@@ -17,7 +16,8 @@ def main():
     classifier_headers = ""
 
     # ---- main processing loop ----
-    years = ["2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017"]
+    years = ["2003", "2004", "2005", "2006", "2007", "2008", "2009", "2010", "2011", "2012", "2013",
+             "2014", "2015", "2016", "2017"]
 
     for year in years:
         print("Processing year ... " + year)
@@ -283,15 +283,22 @@ def process_name_exceptions(line_array):
         line_array[1] = "UT Rio Grande Valley"
     elif line_array[1] == "Utah Valley St.":
         line_array[1] = "Utah Valley"
+    elif line_array[1] == "Southwest Missouri St.":
+        line_array[1] = "Missouri St."
+    elif line_array[1] == "Troy St.":
+        line_array[1] = "Troy"
+    elif line_array[1] == "Middle Tennessee St.":
+        line_array[1] = "Middle Tennessee"
+    elif line_array[1] == "Southwest Texas St.":
+        line_array[1] = "Texas St."
 
-
+    #2003 morris brown not tracked by team rankings
 
 # Teams come into and out of D1
 #  '>=' means they joined D1
 # '>' means they fell out of D1
 # Returns true if team was not a D1 school that year, returns false otherwise
 def check_team_for_ineligibility(team_name, year):
-    # -------- Changes for 13-14 season --------
     if team_name == "Abl Christian" and int(year) < 2014:
         return True
     elif team_name == "Grd Canyon" and int(year) < 2014:
@@ -301,23 +308,19 @@ def check_team_for_ineligibility(team_name, year):
     elif team_name == "Mass Lowell" and int(year) < 2014:
         return True
 
-    # -------- Changes for 12-13 season --------
     elif team_name == "New Orleans" and int(year) < 2013:
         return True
     elif team_name == "N Kentucky" and int(year) < 2013:
         return True
 
-    # -------- Changes for 11-12 season --------
     elif team_name == "Neb Omaha" and int(year) < 2012:
         return True
     elif team_name == "Centenary" and int(year) >= 2012:
         return True
 
-    # -------- Changes for 10-11 season --------
     elif team_name == "Wins-Salem" and int(year) >= 2011:
         return True
 
-    # -------- Changes for 09-10 season --------
     elif team_name == "South Dakota" and int(year) < 2010:
         return True
     elif team_name == "North Dakota" and int(year) < 2010:
@@ -327,13 +330,11 @@ def check_team_for_ineligibility(team_name, year):
     elif team_name == "SIU Edward" and int(year) < 2010:
         return True
 
-    # -------- Changes for 08-09 season --------
     elif team_name == "Bryant" and int(year) < 2009:
         return True
     elif team_name == "Houston Bap" and int(year) < 2009:
         return True
 
-    # -------- Changes for 07-08 season --------
     elif team_name == "CS Bakersfld" and int(year) < 2008:
         return True
     elif team_name == "Fla Gulf Cst" and int(year) < 2008:
@@ -345,7 +346,6 @@ def check_team_for_ineligibility(team_name, year):
     elif team_name == "SC Upstate" and int(year) < 2008:
         return True
 
-    # -------- Changes for 07-08 season --------
     elif team_name == "Central Ark" and int(year) < 2007:
         return True
     elif team_name == "NJIT" and int(year) < 2007:
@@ -354,6 +354,28 @@ def check_team_for_ineligibility(team_name, year):
         return True
     elif team_name == "Bham Southern" and int(year) >= 2007:
         return True
+
+    elif team_name == "Kennesaw St" and int(year) < 2006:
+        return True
+    elif team_name == "N Dakota St" and int(year) < 2006:
+        return True
+    elif team_name == "N Florida" and int(year) < 2006:
+        return True
+    elif team_name == "S Dakota St" and int(year) < 2006:
+        return True
+
+    elif team_name == "Longwood" and int(year) < 2005:
+        return True
+    elif team_name == "N Colorado" and int(year) < 2005:
+        return True
+    elif team_name == "UC Davis" and int(year) < 2005:
+        return True
+    elif team_name == "Utah Val St" and int(year) < 2005:
+        return True
+
+
+
+
 
 
 if __name__ == "__main__":
