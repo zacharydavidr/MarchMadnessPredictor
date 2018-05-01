@@ -89,7 +89,7 @@ def main():
 
             # skip teams that weren't in D1
             team_name = team_name_dict[key]
-            if (check_team_for_ineligibility(team_name, year)):
+            if check_team_for_ineligibility(team_name, year):
                 continue
 
             temp_line = kp_predictors_dict[team_name]
@@ -102,15 +102,26 @@ def main():
     # combine all years into one file
     master_out = open("master.csv", "w")
     my_line = predictors_headers + classifier_headers
-    master_out.write(my_line.lstrip(",").rstrip(",") + "\n")
+    my_line = my_line.replace("-","")
+    master_out.write(my_line.lstrip(",").rstrip(","))
 
     for year in years:
         print("Writing Year: " + str(year))
         temp_in = open("out_" + str(year) + ".csv", "r").readlines()
         for line in temp_in[1:]:
-            master_out.write(line.lstrip(",\n").rstrip(",\n") + "\n")
+            # Don't write out teams that did not qualify for the tournament
+            entry = line.split(",")
+            if entry[27] == "DNQ":
+                continue
+            else:
+                master_out.write(line.lstrip(",\n").rstrip(",\n") + "\n")
 
-    # ---- process 2018 ------
+    process_test_data(team_name_dict, stat_percent)
+
+
+
+# ---- process 2018 ------
+def process_test_data(team_name_dict, stat_percent):
     print("--------")
     print("Processing year ... 2018")
     tr_predictors_dict = {}
@@ -147,7 +158,7 @@ def main():
             kp_predictors_line += line_array[i] + ","
         kp_predictors_dict.update({team_name: kp_predictors_line})
 
-    # Seeds released, no longer need to get seed form team rankings
+    # Seeds released, no longer need to get seed from team rankings
     # print("Getting predicted seeds... ")
     # //SEED_URL = BASE_URL + "/ncaa-tournament/bracketology/"
     # add_seed(tr_predictors_dict, SEED_URL)
@@ -165,6 +176,8 @@ def main():
     add_stat_by_date(tr_predictors_dict, RPI_URL)
     predictors_headers += "RPIRank" + ","
 
+    predictors_headers = predictors_headers.replace("-", "")
+
     summary_year_pt_out.write(predictors_headers.lstrip(",\n").rstrip(",\n") + "\n")
     for key in team_name_dict:
 
@@ -175,7 +188,12 @@ def main():
 
         temp_line = kp_predictors_dict[team_name]
         temp_line += tr_predictors_dict[team_name]
-        summary_year_pt_out.write(temp_line.lstrip(",\n").rstrip(",\n") + "\n")
+
+        entry = temp_line.split(",")
+        if entry[10] == "0":
+            continue
+        else:
+            summary_year_pt_out.write(temp_line.lstrip(",\n").rstrip(",\n") + "\n")
 
     summary_year_pt_out.close()
 
@@ -291,12 +309,12 @@ def process_name_exceptions(line_array):
         line_array[1] = "Middle Tennessee"
     elif line_array[1] == "Southwest Texas St.":
         line_array[1] = "Texas St."
+    # 2003 morris brown not tracked by team rankings
 
-    #2003 morris brown not tracked by team rankings
 
 # Teams come into and out of D1
 #  '>=' means they joined D1
-# '>' means they fell out of D1
+# '<' means they fell out of D1
 # Returns true if team was not a D1 school that year, returns false otherwise
 def check_team_for_ineligibility(team_name, year):
     if team_name == "Abl Christian" and int(year) < 2014:
@@ -372,10 +390,6 @@ def check_team_for_ineligibility(team_name, year):
         return True
     elif team_name == "Utah Val St" and int(year) < 2005:
         return True
-
-
-
-
 
 
 if __name__ == "__main__":
